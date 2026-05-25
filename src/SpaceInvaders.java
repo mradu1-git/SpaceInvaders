@@ -26,6 +26,9 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
             ship.x -= shipVelocityX;
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_RIGHT && ship.x + ship.width + shipVelocityX <= boardWidth) {
             ship.x += shipVelocityX;
+        } else if (keyEvent.getKeyCode() == KeyEvent.VK_SPACE) {
+            Block bullet = new Block(ship.x + shipWidth * 15/32, ship.y, bulletWidth, bulletHeight, null);
+            bulletArray.add(bullet);
         }
     }
 
@@ -77,6 +80,10 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
     int alienCount = 0;
     int alienVelocityX = 1;
 
+    ArrayList<Block> bulletArray;
+    int bulletWidth = tileSize/8;
+    int bulletHeight = tileSize/2;
+    int bulletVelocityY = -10;
 
     Block ship;
     Timer gameLoop;
@@ -101,6 +108,8 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
 
         ship = new Block(shipX, shipY, shipWidth, shipHeight, shipImg);
         alienArray = new ArrayList<Block>();
+        bulletArray = new ArrayList<Block>();
+
         gameLoop = new Timer(1000/60, this);
         createAliens();
         gameLoop.start();
@@ -128,6 +137,15 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
                 g.drawImage(alien.img, alien.x, alien.y, alien.width, alien.height, null);
             }
         }
+
+        g.setColor(Color.white);
+        for (int i = 0; i < bulletArray.size(); i++) {
+            Block bullet = bulletArray.get(i);
+            if (!bullet.used) {
+                g.drawRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                g.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+        }
     }
     public void move() {
         for (int i = 0; i < alienArray.size(); i++) {
@@ -145,5 +163,21 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
                 }
             }
         }
+
+        for (int i = 0; i < bulletArray.size(); i++) {
+            Block bullet = bulletArray.get(i);
+            bullet.y += bulletVelocityY;
+            for (int j = 0; j < alienArray.size(); j++) {
+                Block alien = alienArray.get(j);
+                if (!bullet.used && alien.alive && detectCollision(bullet, alien)) {
+                    bullet.used = true;
+                    alien.alive = false;
+                    alienCount--;
+                }
+            }
+        }
+    }
+    public boolean detectCollision(Block a, Block b) {
+        return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
     }
 }
