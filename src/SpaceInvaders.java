@@ -10,6 +10,9 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
     public void actionPerformed(ActionEvent actionEvent) {
         move();
         repaint();
+        if (gameOver) {
+            gameLoop.stop();
+        }
     }
 
     @Override
@@ -22,6 +25,18 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
 
     @Override
     public void keyReleased(KeyEvent keyEvent) {
+        if (gameOver) {
+            ship.x = shipX;
+            alienArray.clear();
+            bulletArray.clear();
+            score = 0;
+            alienVelocityX = 1;
+            alienColumns = 3;
+            alienRows = 2;
+            gameOver = false;
+            createAliens();
+            gameLoop.start();
+        }
         if (keyEvent.getKeyCode() == KeyEvent.VK_LEFT && ship.x >= shipVelocityX) {
             ship.x -= shipVelocityX;
         } else if (keyEvent.getKeyCode() == KeyEvent.VK_RIGHT && ship.x + ship.width + shipVelocityX <= boardWidth) {
@@ -87,6 +102,8 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
 
     Block ship;
     Timer gameLoop;
+    int score = 0;
+    boolean gameOver = false;
 
     SpaceInvaders() {
         setPreferredSize(new Dimension(boardWidth, boardHeight));
@@ -146,6 +163,12 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
                 g.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
             }
         }
+        g.setFont(new Font("Arial", Font.PLAIN, 32));
+        if (gameOver) {
+            g.drawString("Game Over: " + String.valueOf(score), 10, 35);
+        } else {
+            g.drawString(String.valueOf(score), 10, 35);
+        }
     }
     public void move() {
         for (int i = 0; i < alienArray.size(); i++) {
@@ -161,6 +184,9 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
                         alienArray.get(j).y += alienHeight;
                     }
                 }
+                if (alien.y >= ship.y) {
+                    gameOver = true;
+                }
             }
         }
 
@@ -172,9 +198,21 @@ public class SpaceInvaders extends JPanel implements ActionListener, KeyListener
                 if (!bullet.used && alien.alive && detectCollision(bullet, alien)) {
                     bullet.used = true;
                     alien.alive = false;
+                    score += 100;
                     alienCount--;
                 }
             }
+        }
+        while (bulletArray.size() > 0 && (bulletArray.get(0).used || bulletArray.get(0).y < 0)) {
+            bulletArray.remove(0);
+        }
+        if (alienCount == 0) {
+            alienColumns = Math.min(alienColumns + 1, columns / 2 - 2);
+            alienRows = Math.min(alienRows + 1, rows - 6);
+            score += 500;
+            alienArray.clear();
+            bulletArray.clear();
+            createAliens();
         }
     }
     public boolean detectCollision(Block a, Block b) {
